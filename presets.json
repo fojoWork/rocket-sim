@@ -1,0 +1,32 @@
+{
+  "ships": {
+    "Andromeda-7": [
+      {
+        "thrust": 20000.0,
+        "isp": 500.0,
+        "fuel": 5000,
+        "dry_mass": 1000,
+        "distance": 40
+      }
+    ],
+    "Artemis 3": [
+      {
+        "thrust": 8800000,
+        "isp": 452,
+        "fuel": 2177000,
+        "dry_mass": 5750000,
+        "distance": 10000
+      }
+    ],
+    "Soyuz 2": [
+      {
+        "thrust": 932200,
+        "isp": 359,
+        "fuel": 600000,
+        "dry_mass": 24081,
+        "distance": 1019
+      }
+    ]
+  },
+  "world": {}
+}
