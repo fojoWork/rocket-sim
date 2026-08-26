@@ -12,10 +12,10 @@ def clear_screen():
 def loading_screen():
     whitespace = 50
     for i in range(50):
-        print("[" + "#" * i, "-" * whitespace + "]", end="\r")
+        print("  [" + "#" * i, "-" * whitespace + "]", end="\r")
         whitespace -= 1
         time.sleep(0.1)
-    print("[" + "#"*50 + "]\n --Launched--")
+    print("\r[" + "#"*50 + "]\n --Launched--")
 
 # Reads presets file and then prompts user by letting them select or create a custom preset. Guess we arent using Enums :-(
 def read_presets():
@@ -34,23 +34,22 @@ def read_presets():
         else:
             presets = {}
     else:
-        # If 'ships' doesn't exist yet, create it or treat root as presets
         data = {"ships": data}
         presets = data["ships"]
 
-
     names = list(presets.keys())
 
-    print("Please choose from a preset, or enter 0 to input your own preset values.")
-    print("0. Delete (enter number)")
+    print("Please choose from a preset, or enter 0 to delete / 1 for custom values.")
+    print("0. Delete a preset")
     print("1. Custom (enter values manually)")
+    
+    # Start preset listing at 2 so 0 and 1 remain distinct
     for i, name in enumerate(names, start=2):
         print(f"{i}. {name}")
-    print(len(names) + 2," to Exit (Quit Process)", sep=".")
-    
+    print(f"{len(names) + 2}. Exit (Quit Process)")
 
     while True:
-        choice = input("Enter preset number: ").strip()
+        choice = input("\nEnter selection number: ").strip()
         if not choice:
             print("No selection made — using defaults.")
             return DEFAULT_THRUST_LBS, DEFAULT_ISP, DEFAULT_TARGET_DISTANCE_MILES
@@ -58,34 +57,32 @@ def read_presets():
         try:
             idx = int(choice)
         except ValueError:
-            print("Invalid selection. Please enter a number.")
+            print("Invalid selection. Please enter a valid number.")
             continue
 
+        # Option 0: Delete
         if idx == 0:
             if not names:
                 print("No presets available to delete.")
                 continue
-                
-            # 1. Get user input for the rocket number
-            user_input = input("Please select a rocket to delete based on their number: ").strip()
+
+            user_input = input("Enter the number of the rocket to delete: ").strip()
             try:
                 selected_num = int(user_input)
             except ValueError:
-                print("Invalid input. Please enter a valid number.")
+                print("Invalid input. Please enter a number.")
                 continue
 
-            # 2. Adjust for the 2-start index used in enumeration (i, name in enumerate(names, start=2))
+            # Preset numbers start at 2, so index in names list is selected_num - 2
             selected_index = selected_num - 2
             if 0 <= selected_index < len(names):
                 selected_for_death = names[selected_index]
-                
-                # Protect specific core presets from deletion
                 protected_presets = ["Andromeda-7", "Artemis 3", "Soyuz 2"]
+                
                 if selected_for_death in protected_presets:
                     print(f"Cannot delete protected preset: {selected_for_death}")
                     return read_presets()
-                
-                # Proceed with deletion for allowed presets
+
                 presets.pop(selected_for_death, None)
                 try:
                     with open('presets.json', 'w') as file:
@@ -94,15 +91,18 @@ def read_presets():
                 except Exception as e:
                     print(f"Error saving changes: {e}")
                 return read_presets()
+            else:
+                print("Invalid preset number for deletion.")
+                continue
 
+        # Option 1: Custom Preset
         if idx == 1:
-            # Manual input (previously in get_user_inputs)
             inputted_preset_name = input("Please enter your new preset name: ").strip()
             inputted_thrust = input("Please enter your desired pounds of thrust <lbs>: ").strip()
             inputted_isp = input("What do you want your ISP value to be?: ").strip()
-            inputted_set_distance = input("What should the set distance be? <miles> If you would like to not set distance, leave blank <Default is 10 miles>: ").strip(" ,")
-            inputted_fuel_amount = input("Please enter your rockets fuel amount in lbs: ").strip()
-            inputted_dry_mass = input("Please input your dry mass <weight of rocket without fuel accounted for>: ").strip()
+            inputted_set_distance = input("What should the set distance be? <miles> [Default: 10]: ").strip(" ,")
+            inputted_fuel_amount = input("Please enter your rocket's fuel amount in lbs: ").strip()
+            inputted_dry_mass = input("Please input your dry mass in lbs: ").strip()
 
             INPUTTED_THRUST_LBS = float(inputted_thrust) if inputted_thrust else DEFAULT_THRUST_LBS
             INPUTTED_ISP = float(inputted_isp) if inputted_isp else DEFAULT_ISP
@@ -129,24 +129,25 @@ def read_presets():
             print(f"Created and selected: {inputted_preset_name}")
             return INPUTTED_THRUST_LBS, INPUTTED_ISP, TARGET_DISTANCE_MILES
 
-
-        if 2 <= idx <= len(names):
-            preset_name = names[idx - 1]
-            # expect each preset group to be a list of dicts; use first entry
+        # Options 2 to len(names) + 1: Existing Presets
+        if 2 <= idx <= len(names) + 1:
+            preset_name = names[idx - 2]
             preset_entry = presets.get(preset_name)
+            
             if not preset_entry:
                 print("Preset data missing, try another selection.")
                 continue
 
-            vals = preset_entry[0]
+            vals = preset_entry[0] if isinstance(preset_entry, list) else preset_entry
             INPUTTED_THRUST_LBS = float(vals.get('thrust', DEFAULT_THRUST_LBS))
             INPUTTED_ISP = float(vals.get('isp', DEFAULT_ISP))
             TARGET_DISTANCE_MILES = float(vals.get('distance', DEFAULT_TARGET_DISTANCE_MILES))
 
             print(f"You selected: {preset_name}")
             return INPUTTED_THRUST_LBS, INPUTTED_ISP, TARGET_DISTANCE_MILES
-        
-        if idx > len(names):
+
+        # Exit Option
+        if idx == len(names) + 2:
             sys.exit()
 
         print("Invalid selection. Try again.")
